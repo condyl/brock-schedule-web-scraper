@@ -7,7 +7,7 @@ from time import sleep
 
 import os
 
-from database import create_database,create_table
+from database import create_database,create_table, insert_row
 from helpers.wait_for_load import wait_for_load
 
 options = Options()
@@ -18,6 +18,7 @@ options.page_load_strategy = 'normal'
 
 driver = webdriver.Chrome(options=options)
 driver.get("https://brocku.ca/guides-and-timetables/timetables/")
+driver.implicitly_wait(5)
 
 actions = ActionChains(driver)
 
@@ -49,11 +50,10 @@ print("Creating database and table (if not already created)...")
 create_database("brocku_available_courses")
 create_table("brocku_available_courses", 
              "course_times",
-             ["course_code VARCHAR(4)",
-                "course_number VARCHAR(4)",
+             ["course_code VARCHAR(9)",
                 "course_type VARCHAR(10)",
                 "course_days VARCHAR(10)",
-                "course_time VARCHAR(10)"
+                "course_time VARCHAR(20)"
              ]
             )
 
@@ -69,42 +69,84 @@ for program_list in lists_of_programs:
 
 print("Getting all program courses...")
 
-#for program in programs:
-#
-#    #manually fix specific programs
-#    if program == "Education": program = "Education "
-#
-#    #wait_for_load(driver, program)
-#    sleep(2.5)
-#    #if program == "Education": sleep(5)
-#    program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
-#    actions.move_to_element(program_button).perform()
-#    driver.execute_script("arguments[0].scrollIntoView();", program_button)
-#    program_button.click()
-#    print(driver.current_url)
-#    sleep(0.5)
-#    driver.execute_script("arguments[0].scrollIntoView();", show_programs_button_element)
-#    show_programs_button_element.click()
+for program in programs:
 
-program = "Computer Science"
-program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
-actions.move_to_element(program_button).perform()
-driver.execute_script("arguments[0].scrollIntoView();", program_button)
-program_button.click()
-print(driver.current_url)
+    #manually fix specific programs
+    if program == "Education": program = "Education "
 
-sleep(1.5)
-course_table = driver.find_elements(By.XPATH, "//table[@class='course-table course-listing']")
-print(course_table)
-course_table_body = course_table.find_element(By.TAG_NAME, "tbody")
-print(course_table_body)
+    #wait_for_load(driver, program)
+    sleep(2.5)
+    #if program == "Education": sleep(5)
+    program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
+    actions.move_to_element(program_button).perform()
+    driver.execute_script("arguments[0].scrollIntoView();", program_button)
+    program_button.click()
+    print(driver.current_url)
+
+    driver.implicitly_wait(1.5)
+    course_table = driver.find_element(By.XPATH, "//table[@class='course-table course-listing']")
+    #course_table_body = course_table.find_element(By.TAG_NAME, "tbody")
+    #courses = course_table_body.find_elements(By.TAG_NAME, "tr")
+    courses = course_table.find_elements(By.XPATH, "//tr[contains(@class, 'course-row')]")
+    for course in courses:
+        arrow = course.find_element(By.CLASS_NAME, "arrow")
+        
+        actions.move_to_element(arrow).perform()
+        driver.execute_script("arguments[0].scrollIntoView();", arrow)
+        arrow.click()
+        sleep(3)
+        
+        course_code = course.find_element(By.CLASS_NAME, "course-code").text.strip()
+        course_type = course.find_element(By.CLASS_NAME, "type").text.strip()
+        course_info = course.find_element(By.CLASS_NAME, "data").find_element(By.CLASS_NAME, "course-details-data")
+        course_description = course_info.find_element(By.CLASS_NAME, "description")
+        course_vitals = course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").find_elements(By.TAG_NAME, "li")
+
+        course_name = course.find_element(By.CLASS_NAME, "title").text.strip()
+        course_description_text = course_description.find_element(By.CLASS_NAME, "page-intro").text
+        active_days = []
+        possible_days = []
+        for vital in course_vitals:
+            if "Duration" in vital.text: course_duration = vital.text
+            if "Time" in vital.text: course_time = vital.text
+            if "Section" in vital.text: course_section = vital.text
+            if "Instructor" in vital.text: course_instructor = vital.text
+            if "S M T W T F S" in vital.text: 
+                possible_days = vital.find_elements(By.TAG_NAME, "th")
+                active_days = vital.find_elements(By.CLASS_NAME, "active")
+
+        for day in possible_days:
+            if (day in active_days): active_days.append(day.text)
+
+        course_days = ""
+        for i in range(len(possible_days)):
+            for day in active_days:
+                if day == possible_days[i]:
+                    if (i == 4): 
+                        course_days += "R "
+                    else:
+                        course_days += day.text + " "
+
+        print(course_code, course_type)
+        insert_row("brocku_available_courses", "course_times", 
+                ["course_code", "course_type", "course_days", "course_time"],
+                [course_code, course_type, course_days.strip(), course_time]
+                )
+
+    #close course
+    actions.move_to_element(arrow).perform()
+    driver.execute_script("arguments[0].scrollIntoView();", arrow)
+    arrow.click()
+    sleep(0.5)
 
 
+    sleep(0.5)
+    driver.execute_script("arguments[0].scrollIntoView();", show_programs_button_element)
+    show_programs_button_element.click()
 
+#program = "Computer Science"
 
-sleep(0.5)
-driver.execute_script("arguments[0].scrollIntoView();", show_programs_button_element)
-show_programs_button_element.click()
+    
 
     
 
