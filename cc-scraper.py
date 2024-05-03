@@ -115,6 +115,9 @@ for program in programs:
                 possible_days = vital.find_elements(By.TAG_NAME, "th")
                 active_days = vital.find_elements(By.CLASS_NAME, "active")
 
+        if (course_type == "ASY"): course_time = "Time: Asynchronous"
+        if (course_type == "PRO"): course_time = "Time: Project Course"
+
         for day in possible_days:
             if (day in active_days): active_days.append(day.text)
 
