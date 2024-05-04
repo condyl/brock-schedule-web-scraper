@@ -72,6 +72,7 @@ def insert_row(database, table, columns, values):
     query = query[:-1]
     query+=")"
 
+    print(query)
     cursor.execute(query)
 
     mydb.commit()
