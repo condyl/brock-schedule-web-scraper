@@ -70,31 +70,29 @@ for program_list in lists_of_programs:
 print("Getting all program courses...")
 
 for program in programs:
+    sleep(2)
+    
+    if program == "Education": program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='Education ']")
+    else: program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
 
-    #manually fix specific programs
-    if program == "Education": program = "Education "
-
-    #wait_for_load(driver, program)
-    sleep(2.5)
-    #if program == "Education": sleep(5)
-    program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
     actions.move_to_element(program_button).perform()
     driver.execute_script("arguments[0].scrollIntoView();", program_button)
     program_button.click()
     print(driver.current_url)
 
-    driver.implicitly_wait(1.5)
-    course_table = driver.find_element(By.XPATH, "//table[@class='course-table course-listing']")
-    #course_table_body = course_table.find_element(By.TAG_NAME, "tbody")
-    #courses = course_table_body.find_elements(By.TAG_NAME, "tr")
-    courses = course_table.find_elements(By.XPATH, "//tr[contains(@class, 'course-row')]")
+    sleep(2)
+    try:
+        course_table = driver.find_element(By.XPATH, "//table[@class='course-table course-listing']")
+        courses = course_table.find_elements(By.XPATH, "//tr[contains(@class, 'course-row')]")
+    except:
+        courses = []
     for course in courses:
         arrow = course.find_element(By.CLASS_NAME, "arrow")
         
         actions.move_to_element(arrow).perform()
         driver.execute_script("arguments[0].scrollIntoView();", arrow)
         arrow.click()
-        sleep(3)
+        sleep(2)
         
         course_code = course.find_element(By.CLASS_NAME, "course-code").text.strip()
         course_type = course.find_element(By.CLASS_NAME, "type").text.strip()
@@ -103,7 +101,6 @@ for program in programs:
         course_vitals = course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").find_elements(By.TAG_NAME, "li")
 
         course_name = course.find_element(By.CLASS_NAME, "title").text.strip()
-        course_description_text = course_description.find_element(By.CLASS_NAME, "page-intro").text
         active_days = []
         possible_days = []
         for vital in course_vitals:
@@ -136,20 +133,11 @@ for program in programs:
                 [course_code, course_type, course_days.strip(), course_time]
                 )
 
-    #close course
-    actions.move_to_element(arrow).perform()
-    driver.execute_script("arguments[0].scrollIntoView();", arrow)
-    arrow.click()
-    sleep(0.5)
+        #close course
+        actions.move_to_element(arrow).perform()
+        driver.execute_script("arguments[0].scrollIntoView();", arrow)
+        arrow.click()
+        sleep(1)
 
-
-    sleep(0.5)
     driver.execute_script("arguments[0].scrollIntoView();", show_programs_button_element)
     show_programs_button_element.click()
-
-#program = "Computer Science"
-
-    
-
-    
-
