@@ -3,12 +3,14 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.action_chains import ActionChains
-from time import sleep
+from time import sleep, time
 
 import os
 
 from database import create_database,create_table, insert_row
 from helpers.wait_for_load import wait_for_load
+
+start_time = time()
 
 options = Options()
 options.add_argument('--window-size=1920,1080')
@@ -50,10 +52,13 @@ print("Creating database and table (if not already created)...")
 create_database("brocku_available_courses")
 create_table("brocku_available_courses", 
              "course_times",
-             ["course_code VARCHAR(9)",
+             ["id INT AUTO_INCREMENT PRIMARY KEY",
+                "course_code VARCHAR(9)",
                 "course_type VARCHAR(10)",
                 "course_days VARCHAR(10)",
-                "course_time VARCHAR(20)"
+                "course_time VARCHAR(20)",
+                "course_duration VARCHAR(100)",
+                "course_instructor VARCHAR(100)"
              ]
             )
 
@@ -70,8 +75,8 @@ for program_list in lists_of_programs:
 print("Getting all program courses...")
 
 for program in programs:
-    sleep(2)
-    
+    sleep(5)
+
     if program == "Education": program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='Education ']")
     else: program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
 
@@ -80,19 +85,20 @@ for program in programs:
     program_button.click()
     print(driver.current_url)
 
-    sleep(2)
+    sleep(5)
     try:
         course_table = driver.find_element(By.XPATH, "//table[@class='course-table course-listing']")
         courses = course_table.find_elements(By.XPATH, "//tr[contains(@class, 'course-row')]")
     except:
         courses = []
     for course in courses:
+        st_course = time()
         arrow = course.find_element(By.CLASS_NAME, "arrow")
         
         actions.move_to_element(arrow).perform()
         driver.execute_script("arguments[0].scrollIntoView();", arrow)
         arrow.click()
-        sleep(2)
+        sleep(5)
         
         course_code = course.find_element(By.CLASS_NAME, "course-code").text.strip()
         course_type = course.find_element(By.CLASS_NAME, "type").text.strip()
@@ -104,16 +110,32 @@ for program in programs:
         active_days = []
         possible_days = []
         for vital in course_vitals:
-            if "Duration" in vital.text: course_duration = vital.text
-            if "Time" in vital.text: course_time = vital.text
-            if "Section" in vital.text: course_section = vital.text
-            if "Instructor" in vital.text: course_instructor = vital.text
+            if "Duration" in vital.text: 
+                course_duration = vital.text[10:]
+            if "Time" in vital.text: course_time = vital.text[6:]
+            if "Section" in vital.text: course_section = vital.text[8:]
+            if "Instructor" in vital.text: course_instructor = vital.text[12:]
             if "S M T W T F S" in vital.text: 
                 possible_days = vital.find_elements(By.TAG_NAME, "th")
                 active_days = vital.find_elements(By.CLASS_NAME, "active")
+        
+        if "Time" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
+            course_time = ""
+        if "Duration" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
+            course_duration = ""
+        if "Section" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
+            course_section = ""
+        if "Instructor" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
+            course_instructor = ""
+        if "S M T W T F S" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
+            course_days = ""
 
-        if (course_type == "ASY"): course_time = "Time: Asynchronous"
-        if (course_type == "PRO"): course_time = "Time: Project Course"
+        if (course_type == "ASY"): course_time = ""
+        if (course_type == "PRO"): course_time = ""
+        if (course_type == "FLD"): course_time = ""
+        if (course_type == "IFT"): course_time = ""
+        if (course_type == "INT"): course_time = ""
+        if (course_type == "ONM"): course_time = ""
 
         for day in possible_days:
             if (day in active_days): active_days.append(day.text)
@@ -127,17 +149,23 @@ for program in programs:
                     else:
                         course_days += day.text + " "
 
-        print(course_code, course_type)
         insert_row("brocku_available_courses", "course_times", 
-                ["course_code", "course_type", "course_days", "course_time"],
-                [course_code, course_type, course_days.strip(), course_time]
+                ["course_code", "course_type", "course_days", "course_time", "course_duration", "course_instructor"],
+                [course_code, course_type, course_days.strip(), course_time, course_duration, course_instructor]
                 )
 
         #close course
         actions.move_to_element(arrow).perform()
         driver.execute_script("arguments[0].scrollIntoView();", arrow)
         arrow.click()
-        sleep(1)
+        sleep(3)
+        et_course = time()
+        print("Course: ", course_code, course_type, "| Time: ", str(et_course - st_course)[:6], " seconds")
 
     driver.execute_script("arguments[0].scrollIntoView();", show_programs_button_element)
     show_programs_button_element.click()
+
+end_time = time()
+
+elapsed_time = str(end_time - start_time)[:6]
+print("Elapsed time: ", elapsed_time, " seconds")

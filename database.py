@@ -68,13 +68,30 @@ def insert_row(database, table, columns, values):
 
     query+="("
     for value in values:
-        query += " '" + value + "',"
+        query += ' "' + value + '",'
     query = query[:-1]
     query+=")"
 
-    print(query)
     cursor.execute(query)
 
     mydb.commit()
     cursor.close()
     mydb.close()
+
+def query(query, database):
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database=database
+    )
+
+    cursor = mydb.cursor()
+
+    cursor.execute(query)
+
+    result = cursor.fetchall()
+    mydb.commit()
+    cursor.close()
+    mydb.close()
+    return result
