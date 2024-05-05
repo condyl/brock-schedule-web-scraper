@@ -13,8 +13,7 @@ import json
 
 import os
 
-from database import create_database, create_table, insert_row
-from helpers.wait_for_load import wait_for_load
+from helpers.database import create_database, create_table, insert_row
 
 options = Options()
 options.add_argument("--window-size=1920,1080")
