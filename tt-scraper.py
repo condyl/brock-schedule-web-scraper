@@ -6,6 +6,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from time import sleep, time
 
 import os
+from datetime import datetime
 
 from helpers.database import create_database,create_table, insert_row
 
@@ -53,15 +54,18 @@ create_table("brocku_available_courses",
              "course_times",
              ["id INT AUTO_INCREMENT PRIMARY KEY",
                 "course_code VARCHAR(9)",
+                "course_name VARCHAR(100)",
                 "course_type VARCHAR(10)",
                 "course_days VARCHAR(10)",
-                "course_time VARCHAR(20)",
-                "course_duration VARCHAR(100)",
+                "course_start_time TIME",
+                "course_end_time TIME",
+                "course_start_date DATE",
+                "course_end_date DATE",
                 "course_instructor VARCHAR(100)"
              ]
             )
 
-sleep(1) # there has to be a better way to do this
+sleep(1) # there has to be a better way to do this()
 print("Getting all programs...")
 lists_of_programs = driver.find_elements(By.XPATH, "//ul[@class='col']")
 programs = []
@@ -110,8 +114,13 @@ for program in programs:
         possible_days = []
         for vital in course_vitals:
             if "Duration" in vital.text: 
-                course_duration = vital.text[10:]
-            if "Time" in vital.text: course_time = vital.text[6:]
+                course_duration = vital.text[10:].split(" to ")
+                course_start_date = datetime.strptime(course_duration[0], '%b %d, %Y').strftime('%Y-%m-%d')
+                course_end_date = datetime.strptime(course_duration[1], '%b %d, %Y').strftime('%Y-%m-%d')
+            if "Time" in vital.text: 
+                course_time = vital.text[6:]
+                course_start_time = course_time[:4]+"00"
+                course_end_time = course_time[-4:]+"00"
             if "Section" in vital.text: course_section = vital.text[8:]
             if "Instructor" in vital.text: course_instructor = vital.text[12:]
             if "S M T W T F S" in vital.text: 
@@ -119,7 +128,8 @@ for program in programs:
                 active_days = vital.find_elements(By.CLASS_NAME, "active")
         
         if "Time" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
-            course_time = ""
+            course_start_date = "000000"
+            course_end_date = "000000"
         if "Duration" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
             course_duration = ""
         if "Section" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
@@ -149,8 +159,8 @@ for program in programs:
                         course_days += day.text + " "
 
         insert_row("brocku_available_courses", "course_times", 
-                ["course_code", "course_type", "course_days", "course_time", "course_duration", "course_instructor"],
-                [course_code, course_type, course_days.strip(), course_time, course_duration, course_instructor]
+                ["course_code", "course_name", "course_type", "course_days", "course_start_time", "course_end_time", "course_start_date", "course_end_date", "course_instructor"],
+                [course_code, course_name, course_type, course_days.strip(), course_start_time, course_end_time, course_start_date, course_end_date, course_instructor]
                 )
 
         #close course
