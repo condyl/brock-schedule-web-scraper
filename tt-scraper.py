@@ -119,8 +119,8 @@ for program in programs:
                 course_end_date = datetime.strptime(course_duration[1], '%b %d, %Y').strftime('%Y-%m-%d')
             if "Time" in vital.text: 
                 course_time = vital.text[6:]
-                course_start_time = course_time[:4]+"00"
-                course_end_time = course_time[-4:]+"00"
+                course_start_time = course_time[:4].strip()+"00"
+                course_end_time = course_time[-4:].strip()+"00"
             if "Section" in vital.text: course_section = vital.text[8:]
             if "Instructor" in vital.text: course_instructor = vital.text[12:]
             if "S M T W T F S" in vital.text: 
