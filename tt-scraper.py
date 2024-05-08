@@ -80,10 +80,12 @@ print(len(programs), "programs found.")
 
 print("Getting all program courses...")
 
-start_index = 0
-if sys.argv[1]:
+try:
     start_index = int(sys.argv[1])
     print("Starting at index: ", start_index,"[", programs[start_index], "].")
+except:
+    start_index = 0
+    print("No index provided. Starting at index 0.")
 
 for i in range(0,len(programs)):
     if i < start_index: continue
@@ -140,8 +142,8 @@ for i in range(0,len(programs)):
                 active_days = vital.find_elements(By.CLASS_NAME, "active")
         
         if "Time" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
-            course_start_date = "000000"
-            course_end_date = "000000"
+            course_start_time = "000000"
+            course_end_time = "000000"
         if "Section" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
             course_section = ""
         if "Instructor" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
