@@ -1,3 +1,5 @@
+import sys
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -74,11 +76,21 @@ for program_list in lists_of_programs:
     for program in all_programs:
         program_text = program.find_element(By.TAG_NAME, "a").text
         programs.append(program_text)
+print(len(programs), "programs found.")
 
 print("Getting all program courses...")
 
-for program in programs:
+start_index = 0
+if sys.argv[1]:
+    start_index = int(sys.argv[1])
+    print("Starting at index: ", start_index,"[", programs[start_index], "].")
+
+for i in range(0,len(programs)):
+    if i < start_index: continue
+
     sleep(5)
+
+    program = programs[i]
 
     if program == "Education": program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='Education ']")
     else: program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
@@ -130,8 +142,6 @@ for program in programs:
         if "Time" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
             course_start_date = "000000"
             course_end_date = "000000"
-        if "Duration" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
-            course_duration = ""
         if "Section" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
             course_section = ""
         if "Instructor" not in course_info.find_element(By.CLASS_NAME, "vitals").find_element(By.TAG_NAME, "ul").text:
