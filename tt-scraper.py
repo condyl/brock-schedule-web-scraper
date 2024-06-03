@@ -1,7 +1,6 @@
 import sys
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.action_chains import ActionChains
@@ -12,19 +11,37 @@ from datetime import datetime
 
 from helpers.database import create_database,create_table, insert_row
 
+def format_time(time_value):
+    """Converts a time value like 120000 to 12:00:00."""
+    
+    # Ensure the time value has 6 digits (add leading zeros if necessary)
+    time_str = str(time_value).zfill(6)  
+
+    # Extract hours, minutes, and seconds
+    hours = time_str[:2]
+    minutes = time_str[2:4]
+    seconds = time_str[4:]
+
+    # Format the time string
+    formatted_time = f"{hours}:{minutes}:{seconds}"
+
+    return formatted_time
+
 start_time = time()
 
-options = Options()
-options.add_argument('--window-size=1920,1080')
-options.add_argument('--headless')
+options = webdriver.FirefoxOptions()
+options.add_argument("--width=1920")
+options.add_argument("--height=1080")
+#options.add_argument("--headless")
 options.add_argument("--log-level=3")
 options.page_load_strategy = 'normal'
 
-driver = webdriver.Chrome(options=options)
+driver = webdriver.Firefox(options=options)
 driver.get("https://brocku.ca/guides-and-timetables/timetables/")
-driver.implicitly_wait(5)
+driver.implicitly_wait(20)
 
 actions = ActionChains(driver)
+
 
 # Get the options for the type and session dropdowns
 print("Getting options for type dropdowns...")
@@ -49,7 +66,6 @@ session_select.select_by_visible_text(session_options[1])
 show_programs_button_element.click()
 
 ### NOW ON "AVAILABLE PROGRAMS" PAGE ###
-#print(driver.current_url)
 print("Creating database and table (if not already created)...")
 create_database("brocku_available_courses")
 create_table("brocku_available_courses", 
@@ -97,8 +113,8 @@ for i in range(0,len(programs)):
     if program == "Education": program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='Education ']")
     else: program_button = driver.find_element(By.XPATH, "//a[@data-program_full_name='{}']".format(program))
 
-    actions.move_to_element(program_button).perform()
     driver.execute_script("arguments[0].scrollIntoView();", program_button)
+    actions.move_to_element(program_button).perform()
     program_button.click()
     print(driver.current_url)
 
@@ -112,8 +128,8 @@ for i in range(0,len(programs)):
         st_course = time()
         arrow = course.find_element(By.CLASS_NAME, "arrow")
         
-        actions.move_to_element(arrow).perform()
         driver.execute_script("arguments[0].scrollIntoView();", arrow)
+        actions.move_to_element(arrow).perform()
         arrow.click()
         sleep(5)
         
@@ -133,8 +149,14 @@ for i in range(0,len(programs)):
                 course_end_date = datetime.strptime(course_duration[1], '%b %d, %Y').strftime('%Y-%m-%d')
             if "Time" in vital.text: 
                 course_time = vital.text[6:]
-                course_start_time = course_time[:4].strip()+"00"
-                course_end_time = course_time[-4:].strip()+"00"
+                print(course_time)
+                if "-" in course_time:
+                    course_start_time = format_time(course_time[:4].strip()+"00")
+                    course_end_time = format_time(course_time[-4:].strip()+"00")
+                else:
+                    course_start_time = "00:00:00"
+                    course_end_time = "00:00:00"
+                print(course_start_time, course_end_time)
             if "Section" in vital.text: course_section = vital.text[8:]
             if "Instructor" in vital.text: course_instructor = vital.text[12:]
             if "S M T W T F S" in vital.text: 
@@ -176,8 +198,8 @@ for i in range(0,len(programs)):
                 )
 
         #close course
-        actions.move_to_element(arrow).perform()
         driver.execute_script("arguments[0].scrollIntoView();", arrow)
+        actions.move_to_element(arrow).perform()
         arrow.click()
         sleep(3)
         et_course = time()

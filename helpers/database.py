@@ -1,25 +1,15 @@
 import mysql.connector
+import sqlite3;
 
 def create_database(name):
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password=""
-    )
-    cursor = mydb.cursor()
-    cursor.execute("CREATE DATABASE IF NOT EXISTS `{}`".format(name))
-    mydb.commit()
-    cursor.close()
-    mydb.close()
+    conn = sqlite3.connect("output/"+name+".db")
+    conn.close()
 
-def create_table(database, table, columns):
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database=database
-    )
-    cursor = mydb.cursor()
+create_database("brocku_available_courses")
+
+def create_table(name, table, columns):
+    conn = sqlite3.connect("output/"+name+".db")
+    cursor = conn.cursor()
     query = "CREATE TABLE IF NOT EXISTS `{n}` ".format(**{"n":table})
     query+="("
     for column in columns:
@@ -29,33 +19,23 @@ def create_table(database, table, columns):
 
     cursor.execute(query)
 
-    mydb.commit()
+    conn.commit()
     cursor.close()
-    mydb.close()
+    conn.close()
 
-def delete_all_rows(database, table):
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database=database
-    )
+def delete_all_rows(name, table):
+    conn = sqlite3.connect("output/"+name+".db")
 
-    cursor = mydb.cursor()
+    cursor = conn.cursor()
     cursor.execute("DELETE FROM `{}`".format(table))
-    mydb.commit()
+    conn.commit()
     cursor.close()
-    mydb.close()
+    conn.close()
 
-def insert_row(database, table, columns, values):
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database=database
-    )
+def insert_row(name, table, columns, values):
+    conn = sqlite3.connect("output/"+name+".db")
 
-    cursor = mydb.cursor()
+    cursor = conn.cursor()
 
     query = "INSERT INTO `{n}` ".format(**{"n":table})
     query+="("
@@ -74,24 +54,19 @@ def insert_row(database, table, columns, values):
 
     cursor.execute(query)
 
-    mydb.commit()
+    conn.commit()
     cursor.close()
-    mydb.close()
+    conn.close()
 
-def query(query, database):
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database=database
-    )
+def query(query, name):
+    conn = sqlite3.connect("output/"+name+".db")
 
-    cursor = mydb.cursor()
+    cursor = conn.cursor()
 
     cursor.execute(query)
 
     result = cursor.fetchall()
-    mydb.commit()
+    conn.commit()
     cursor.close()
-    mydb.close()
+    conn.close()
     return result
